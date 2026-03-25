@@ -8,5 +8,5 @@ API_BASE = "https://data-act.connected.pon.bike/api"
 
 DEFAULT_SCAN_INTERVAL = 300
 
-PLATFORMS: list[str] = ["sensor", "device_tracker"]
+PLATFORMS: list[str] = ["sensor", "device_tracker", "binary_sensor"]
 

@@ -27,7 +27,8 @@ If you rely on this integration for critical automations or dashboards, please b
 - OAuth2 (PKCE, public client — no client secret)
 - One Home Assistant **device per bike**
 - GPS location via `device_tracker`
-- Telemetry sensors (currently odometer, module/battery charge)
+- Telemetry sensors (currently odometer, IOT module/battery charge, bike battery charge and charging status)
+  * 0.3.0 added bike battery next to IOT module batter charge state and status
 - Friendly bike naming (nickname + frame number)
 - Automatic token refresh (handled by Home Assistant)
 - Robust polling coordinator
@@ -170,11 +171,8 @@ Currently implemented:
 
 Planned (no guarantees):
 
-- 🔁 Multi-account support
 - 📡 MQTT / streaming telemetry (PON has not published endpoint yet)
 - 📦 HACS publication
-- 📊 Additional telemetry sensors
-- 🧼 Entity allow-listing / pruning
 
 ---
 

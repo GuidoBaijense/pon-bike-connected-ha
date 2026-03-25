@@ -27,6 +27,7 @@ def _bike_name(bike: dict[str, Any]) -> str:
         return bike_id
     return "Bike"
 
+
 def _device_info(bike: dict[str, Any]) -> dict[str, Any]:
     bike_id = str(bike.get("bikeId") or "")
     manufacturer_id = bike.get("manufacturerId")
@@ -62,6 +63,7 @@ def _device_info(bike: dict[str, Any]) -> dict[str, Any]:
 
     return info
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -72,7 +74,6 @@ async def async_setup_entry(
     entities: list[SensorEntity] = []
     data = coordinator.data or {}
     bikes: list[dict[str, Any]] = data.get("bikes", [])
-    states_by_id: dict[str, dict[str, Any]] = data.get("states_by_bike_id", {})
 
     for bike in bikes:
         bike_id = str(bike.get("bikeId") or "")
@@ -80,7 +81,7 @@ async def async_setup_entry(
             continue
         entities.append(PonBikeOdometerSensor(coordinator, entry, bike))
         entities.append(PonBikeModuleChargeSensor(coordinator, entry, bike))
-        # (Optional later: add lastOnline timestamp sensor, etc.)
+        entities.append(PonBikeBatteryChargeSensor(coordinator, entry, bike))
 
     async_add_entities(entities)
 
@@ -107,7 +108,7 @@ class PonBikeOdometerSensor(_PonBikeBaseSensor):
         super().__init__(coordinator, entry, bike)
         self._attr_name = f"{self._bike_name} Odometer"
         self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_odometer"
-        self._suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_odometer"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_odometer"
         self._attr_native_unit_of_measurement = "km"
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
 
@@ -126,9 +127,9 @@ class PonBikeModuleChargeSensor(_PonBikeBaseSensor):
 
     def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
         super().__init__(coordinator, entry, bike)
-        self._attr_name = f"{self._bike_name} Module charge"
+        self._attr_name = f"{self._bike_name} IOT Module charge"
         self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_module_charge"
-        self._suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_module_charge"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_module_charge"
         self._attr_native_unit_of_measurement = "%"
         self._attr_device_class = SensorDeviceClass.BATTERY
 
@@ -141,3 +142,24 @@ class PonBikeModuleChargeSensor(_PonBikeBaseSensor):
         except (TypeError, ValueError):
             return None
 
+
+class PonBikeBatteryChargeSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:battery"
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} Bike battery charge"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_bike_battery_charge"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_bike_battery_charge"
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_device_class = SensorDeviceClass.BATTERY
+
+    @property
+    def native_value(self) -> int | None:
+        bt = self._state.get("bikeTelemetry") or {}
+        battery = bt.get("battery") or {}
+        charge = battery.get("charge")
+        try:
+            return int(charge) if charge is not None else None
+        except (TypeError, ValueError):
+            return None
