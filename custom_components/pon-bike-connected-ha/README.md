@@ -22,13 +22,19 @@ If you rely on this integration for critical automations or dashboards, please b
 
 ---
 
+## Change log
+
+- 0.3.0 - added bike battery next to IOT module batter charge state and status
+- 0.3.1 - added range and assist level sensors
+
+---
+
 ## Features
 
 - OAuth2 (PKCE, public client — no client secret)
 - One Home Assistant **device per bike**
 - GPS location via `device_tracker`
 - Telemetry sensors (currently odometer, IOT module/battery charge, bike battery charge and charging status)
-  * 0.3.0 added bike battery next to IOT module batter charge state and status
 - Friendly bike naming (nickname + frame number)
 - Automatic token refresh (handled by Home Assistant)
 - Robust polling coordinator

@@ -82,7 +82,9 @@ async def async_setup_entry(
         entities.append(PonBikeOdometerSensor(coordinator, entry, bike))
         entities.append(PonBikeModuleChargeSensor(coordinator, entry, bike))
         entities.append(PonBikeBatteryChargeSensor(coordinator, entry, bike))
-
+        entities.append(PonBikeAssistLevelSensor(coordinator, entry, bike))
+        entities.append(PonBikeRangeSensor(coordinator, entry, bike))
+        
     async_add_entities(entities)
 
 
@@ -161,5 +163,44 @@ class PonBikeBatteryChargeSensor(_PonBikeBaseSensor):
         charge = battery.get("charge")
         try:
             return int(charge) if charge is not None else None
+        except (TypeError, ValueError):
+            return None
+
+class PonBikeAssistLevelSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:speedometer"
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} Assist level"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_assist_level"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_assist_level"
+
+    @property
+    def native_value(self) -> int | None:
+        bt = self._state.get("bikeTelemetry") or {}
+        assist = bt.get("assistLevel")
+        try:
+            return int(assist) if assist is not None else None
+        except (TypeError, ValueError):
+            return None
+
+
+class PonBikeRangeSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:map-marker-distance"
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} Range"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_range"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_range"
+        self._attr_native_unit_of_measurement = "km"
+        self._attr_device_class = SensorDeviceClass.DISTANCE
+
+    @property
+    def native_value(self) -> float | None:
+        bt = self._state.get("bikeTelemetry") or {}
+        rng = bt.get("range")
+        try:
+            return float(rng) if rng is not None else None
         except (TypeError, ValueError):
             return None

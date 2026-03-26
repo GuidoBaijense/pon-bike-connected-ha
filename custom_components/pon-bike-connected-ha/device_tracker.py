@@ -136,4 +136,7 @@ class PonBikeTracker(CoordinatorEntity[PonBikeCoordinator], TrackerEntity):
             "module_charge_pct": it.get("moduleCharge"),
             "bike_battery_charge_pct": battery.get("charge"),
             "bike_battery_charging": battery.get("charging"),
+             "assist_level": bt.get("assistLevel"),
+             "range_km": bt.get("range"),
         }
+        
