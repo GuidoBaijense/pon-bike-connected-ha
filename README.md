@@ -60,7 +60,7 @@ Availability of sensors depends on what the PON API exposes per brand and model.
 
 Different drive units have different datasets,data via Bosch BES3 drivesets is limited,
 chargepercentage is always provided as 100% by the PON API. This is not a limitation of this integration but of the data PON provides based on the data available for the bike.
-Also see https://data-act.connected.pon.bike/docs (Different drive units, different datasets)
+Also see data-act.pon.bike/docs/connected-bike (Different drive units, different datasets)
 
 ---
 
@@ -76,7 +76,7 @@ Once this is setup the bikes in these apps will be linked to a pon.bike account,
 
 ### Create PON developer account and application (DON'T SKIP, DO THIS SECOND)
 
-1. Create a PON developer account at https://data-act.connected.pon.bike/
+1. Create a POMN developer account at https://data-act.pon.bike/
   - click login
   - create Sign up
 

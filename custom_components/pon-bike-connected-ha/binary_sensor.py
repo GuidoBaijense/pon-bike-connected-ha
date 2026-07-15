@@ -78,6 +78,9 @@ async def async_setup_entry(
         if not bike_id:
             continue
         entities.append(PonBikeBatteryChargingBinarySensor(coordinator, entry, bike))
+        # MQTT-sourced binary sensors (return None until first MQTT event arrives)
+        entities.append(PonBikeLightsOnBinarySensor(coordinator, entry, bike))
+        entities.append(PonBikeIotPowerSuppliedBinarySensor(coordinator, entry, bike))
 
     async_add_entities(entities)
 
@@ -115,3 +118,44 @@ class PonBikeBatteryChargingBinarySensor(_PonBikeBaseBinarySensor):
         if charging is None:
             return None
         return bool(charging)
+
+
+# ---------------------------------------------------------------------------
+# MQTT-sourced binary sensors (populated by real-time events; None until first push)
+# ---------------------------------------------------------------------------
+
+class PonBikeLightsOnBinarySensor(_PonBikeBaseBinarySensor):
+    _attr_icon = "mdi:lightbulb"
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} Lights on"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_lights_on"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_lights_on"
+
+    @property
+    def is_on(self) -> bool | None:
+        bt = self._state.get("bikeTelemetry") or {}
+        val = bt.get("lightsOn")
+        if val is None:
+            return None
+        return bool(val)
+
+
+class PonBikeIotPowerSuppliedBinarySensor(_PonBikeBaseBinarySensor):
+    _attr_icon = "mdi:power-plug"
+    _attr_device_class = BinarySensorDeviceClass.PLUG
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} IOT power supplied"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_iot_power_supplied"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_iot_power_supplied"
+
+    @property
+    def is_on(self) -> bool | None:
+        it = self._state.get("iotTelemetry") or {}
+        val = it.get("powerSupplied")
+        if val is None:
+            return None
+        return bool(val)

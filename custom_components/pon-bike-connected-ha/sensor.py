@@ -4,6 +4,11 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    UnitOfElectricPotential,
+    UnitOfSpeed,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -84,6 +89,13 @@ async def async_setup_entry(
         entities.append(PonBikeBatteryChargeSensor(coordinator, entry, bike))
         entities.append(PonBikeAssistLevelSensor(coordinator, entry, bike))
         entities.append(PonBikeRangeSensor(coordinator, entry, bike))
+        # MQTT-sourced sensors (return None until first MQTT event arrives)
+        entities.append(PonBikeSpeedSensor(coordinator, entry, bike))
+        entities.append(PonBikeBatteryVoltageSensor(coordinator, entry, bike))
+        entities.append(PonBikeIotModuleVoltageSensor(coordinator, entry, bike))
+        entities.append(PonBikeIotTemperatureSensor(coordinator, entry, bike))
+        entities.append(PonBikeGsmSignalSensor(coordinator, entry, bike))
+        entities.append(PonBikeStateSensor(coordinator, entry, bike))
         
     async_add_entities(entities)
 
@@ -204,3 +216,130 @@ class PonBikeRangeSensor(_PonBikeBaseSensor):
             return float(rng) if rng is not None else None
         except (TypeError, ValueError):
             return None
+
+
+# ---------------------------------------------------------------------------
+# MQTT-sourced sensors (populated by real-time events; None until first push)
+# ---------------------------------------------------------------------------
+
+class PonBikeSpeedSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:speedometer"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_device_class = SensorDeviceClass.SPEED
+    _attr_native_unit_of_measurement = UnitOfSpeed.KILOMETERS_PER_HOUR
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} Speed"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_speed"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_speed"
+
+    @property
+    def native_value(self) -> float | None:
+        bt = self._state.get("bikeTelemetry") or {}
+        val = bt.get("speedInKmh")
+        try:
+            return float(val) if val is not None else None
+        except (TypeError, ValueError):
+            return None
+
+
+class PonBikeBatteryVoltageSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:flash"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_device_class = SensorDeviceClass.VOLTAGE
+    _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} Battery voltage"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_battery_voltage"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_battery_voltage"
+
+    @property
+    def native_value(self) -> float | None:
+        bt = self._state.get("bikeTelemetry") or {}
+        battery = bt.get("battery") or {}
+        val = battery.get("voltage")
+        try:
+            return float(val) if val is not None else None
+        except (TypeError, ValueError):
+            return None
+
+
+class PonBikeIotModuleVoltageSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:flash"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_device_class = SensorDeviceClass.VOLTAGE
+    _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} IOT Module voltage"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_module_voltage"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_module_voltage"
+
+    @property
+    def native_value(self) -> float | None:
+        it = self._state.get("iotTelemetry") or {}
+        val = it.get("moduleVoltage")
+        try:
+            return float(val) if val is not None else None
+        except (TypeError, ValueError):
+            return None
+
+
+class PonBikeIotTemperatureSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:thermometer"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} IOT Module temperature"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_module_temperature"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_module_temperature"
+
+    @property
+    def native_value(self) -> float | None:
+        it = self._state.get("iotTelemetry") or {}
+        val = it.get("temperatureInC")
+        try:
+            return float(val) if val is not None else None
+        except (TypeError, ValueError):
+            return None
+
+
+class PonBikeGsmSignalSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:signal"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} GSM signal strength"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_gsm_signal"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_gsm_signal"
+
+    @property
+    def native_value(self) -> int | None:
+        it = self._state.get("iotTelemetry") or {}
+        val = it.get("gsmSignalStrength")
+        try:
+            return int(val) if val is not None else None
+        except (TypeError, ValueError):
+            return None
+
+
+class PonBikeStateSensor(_PonBikeBaseSensor):
+    _attr_icon = "mdi:bike"
+
+    def __init__(self, coordinator: PonBikeCoordinator, entry: ConfigEntry, bike: dict[str, Any]) -> None:
+        super().__init__(coordinator, entry, bike)
+        self._attr_name = f"{self._bike_name} State"
+        self._attr_unique_id = f"{entry.entry_id}_{self._bike_id}_bike_state"
+        self._attr_suggested_object_id = f"ponbike_{entry.entry_id}_{self._bike_id}_bike_state"
+
+    @property
+    def native_value(self) -> str | None:
+        return self._state.get("bikeState")
